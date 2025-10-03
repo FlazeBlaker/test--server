@@ -102,3 +102,45 @@ app.post('/api/products', async (req, res) => {
 
 
 module.exports = app;
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`\n🎉 Server is running on port ${PORT}`);
+        console.log(`Local URL: http://localhost:${PORT}`);
+    });
+}
+// Add this new route to your server.js file
+
+// ----------------------------------------------------
+// FIREBASE ROUTE: POST a new contact form submission
+// ----------------------------------------------------
+
+app.post('/api/contact', async (req, res) => {
+    try {
+        const { name, email, subject, message } = req.body;
+
+        // Basic validation
+        if (!name || !email || !message) {
+            return res.status(400).json({ message: 'Name, email, and message are required fields.' });
+        }
+
+        const newSubmission = {
+            name,
+            email,
+            subject: subject || 'General Inquiry',
+            message,
+            submittedAt: admin.firestore.FieldValue.serverTimestamp() // Adds a timestamp
+        };
+
+        // Add the new submission to the 'contactSubmissions' collection
+        const docRef = await db.collection('contactSubmissions').add(newSubmission);
+
+        res.status(201).json({ 
+            message: 'Message sent successfully!',
+            id: docRef.id 
+        });
+
+    } catch (error) {
+        console.error("Error saving contact submission:", error);
+        res.status(500).json({ message: 'Failed to send message.' });
+    }
+});
