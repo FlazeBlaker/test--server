@@ -62,6 +62,43 @@ app.get('/api/products', async (req, res) => {
     }
 });
 
+// In server.js
+
+// ----------------------------------------------------
+// NEW ROUTE: POST a new order
+// ----------------------------------------------------
+
+app.post('/api/orders', async (req, res) => {
+    try {
+        // The order details sent from the checkout page
+        const orderData = req.body;
+
+        // Basic validation
+        if (!orderData || !orderData.items || orderData.items.length === 0) {
+            return res.status(400).json({ message: 'Missing order data.' });
+        }
+
+        const newOrder = {
+            ...orderData,
+            // Add a creation timestamp using the server's time
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        };
+
+        // Save the new order to the 'orders' collection
+        const docRef = await db.collection('orders').add(newOrder);
+
+        // Send a success response back to the website
+        res.status(201).json({
+            message: 'Order placed successfully!',
+            orderId: docRef.id
+        });
+        
+    } catch (error) {
+        console.error("Error creating order:", error);
+        res.status(500).json({ message: 'Failed to create order.' });
+    }
+});
+
 // ----------------------------------------------------
 // FIREBASE ROUTE: POST a new product (with description and images array)
 // ----------------------------------------------------
@@ -102,3 +139,9 @@ app.post('/api/products', async (req, res) => {
 
 
 module.exports = app;
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log('\n🎉 Server is running on port ${PORT}');
+        console.log('Local URL: http://localhost:${PORT}');
+    });
+}
