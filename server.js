@@ -43,7 +43,6 @@ app.get('/', (req, res) => {
 // ----------------------------------------------------
 // FIREBASE ROUTE: GET all products
 // ----------------------------------------------------
-
 app.get('/api/products', async (req, res) => {
     try {
         const productsRef = db.collection('products');
@@ -62,12 +61,9 @@ app.get('/api/products', async (req, res) => {
     }
 });
 
-// In server.js
-
 // ----------------------------------------------------
 // NEW ROUTE: POST a new order
 // ----------------------------------------------------
-
 app.post('/api/orders', async (req, res) => {
     try {
         // The order details sent from the checkout page
@@ -102,7 +98,6 @@ app.post('/api/orders', async (req, res) => {
 // ----------------------------------------------------
 // FIREBASE ROUTE: POST a new product (with description and images array)
 // ----------------------------------------------------
-
 app.post('/api/products', async (req, res) => {
     try {
         // Extract required fields from the request body
@@ -137,11 +132,46 @@ app.post('/api/products', async (req, res) => {
     }
 });
 
+// ----------------------------------------------------
+// FIREBASE ROUTE: POST a new contact form submission
+// ----------------------------------------------------
+app.post('/api/contact', async (req, res) => {
+    try {
+        const { name, email, subject, message } = req.body;
 
+        // Basic validation
+        if (!name || !email || !message) {
+            return res.status(400).json({ message: 'Name, email, and message are required fields.' });
+        }
+
+        const newSubmission = {
+            name,
+            email,
+            subject: subject || 'General Inquiry',
+            message,
+            submittedAt: admin.firestore.FieldValue.serverTimestamp() // Adds a timestamp
+        };
+
+        // Add the new submission to the 'contactSubmissions' collection
+        const docRef = await db.collection('contactSubmissions').add(newSubmission);
+
+        res.status(201).json({ 
+            message: 'Message sent successfully!',
+            id: docRef.id 
+        });
+
+    } catch (error) {
+        console.error("Error saving contact submission:", error);
+        res.status(500).json({ message: 'Failed to send message.' });
+    }
+});
+
+
+// --- Server Startup ---
 module.exports = app;
 if (require.main === module) {
     app.listen(PORT, () => {
-        console.log('\n🎉 Server is running on port ${PORT}');
-        console.log('Local URL: http://localhost:${PORT}');
-    });
+        console.log(`\n🎉 Server is running on port ${PORT}`);
+        console.log(`Local URL: http://localhost:${PORT}`);
+    });
 }
